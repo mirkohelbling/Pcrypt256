@@ -24,16 +24,14 @@ class CredentialManager:
         clearSecret = getpass(f"Enter Secret: ")
         hashedSecret = hashlib.sha256(clearSecret.encode(encoding="utf8")).digest()
         nonce = hashlib.sha256(hashedSecret).digest()[0:16]
-        file = et.parse(file_name + ConfigParser.getFileType())
+        file = et.parse(file_name)
         if not CredentialManager.compareValues((base64.b64decode(file.findtext("secret"))), hashedSecret):
             print(f"Error: Secret do not match")
         return hashedSecret, nonce
     
     @staticmethod
-    def verifyFileIntegrity(file, fileHash):
-        file = et.parse(file + ConfigParser.getFileType())
-        print(fileHash)
-        print(base64.b64decode(file.findtext("fileHash")))
+    def verifyFileIntegrity(file_name, fileHash):
+        file = et.parse(file_name)
         if not CredentialManager.compareValues(base64.b64decode(file.findtext("fileHash")), fileHash):
             print("Error: File integrity mismatch")
 

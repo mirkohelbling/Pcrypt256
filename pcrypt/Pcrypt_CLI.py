@@ -3,6 +3,7 @@
 
 # Standard library imports
 import sys
+import os
 # Third-party imports
 import hashlib as hashlib
 from getpass import getpass
@@ -13,19 +14,22 @@ import argparse
 from Encryption_Manager import EncryptionManager
 from Credential_Manager import CredentialManager
 from File_Manager import FileManager
+from Config_Parser import ConfigParser
 
 class PcryptCLI:
 
-    def encryptFile(file, secret, nonce):
-        FileManager.processBar(file, "Encryption")
+    def encryptFile(file_name, secret, nonce):
+        FileManager.processBar(file_name, "Encryption")
         em = EncryptionManager(secret, nonce)
-        em.encryptFile(file)
+        em.encryptFile(file_name)
+        os.remove(file_name)
 
-    def decryptFile(file, secret, nonce):
-        FileManager.processBar(file, "Decryption")
+    def decryptFile(file_name, secret, nonce):
+        FileManager.processBar(file_name, "Decryption")
         em = EncryptionManager(secret, nonce)
-        fileHash = em.decryptFile(file)
-        CredentialManager.verifyFileIntegrity(file, fileHash)
+        fileHash = em.decryptFile(file_name)
+        CredentialManager.verifyFileIntegrity(file_name, fileHash)
+        os.remove(file_name)
 
     def main(argv):
 
@@ -45,48 +49,61 @@ class PcryptCLI:
         parser.add_argument("-dF", "--decrypt_file", required=False, help="Decrypt a single file", nargs=1)
         parser.add_argument("-eD", "--encrypt_directory", required=False, help="Encrypt all files of a single directory (containing all subdirectories)", nargs=1)
         parser.add_argument("-dD", "--decrypt_directory", required=False, help="Decrypt all files of a single directory (containing all subdirectories)", nargs=1)
-    
+        parser.add_argument("-c", "--show_config", action="store_true", help="Show the current configuration of PCrypt256")
+
         args = parser.parse_args()
         
         if len(sys.argv) == 1:
             args.status = True
 
         if args.encrypt_file:
-            file = args.encrypt_file[0]
-            if not FileManager.checkFile(file):
-                print(f"Error:{file} does not exist")
+            file_name = args.encrypt_file[0]
+            if not FileManager.checkFile(file_name):
+                print(f"Error:{file_name} does not exist or file type is not supported")
                 sys.exit(0)
             secret, nonce = CredentialManager.createSecret()
-            PcryptCLI.encryptFile(file, secret, nonce)
+            PcryptCLI.encryptFile(file_name, secret, nonce)
             print(f"\n")
 
         
         elif args.decrypt_file:
-            file = args.decrypt_file[0]
-            if not FileManager.checkFile(file):
-                print(f"Error:{file} does not exist")
+            file_name = args.decrypt_file[0]
+            if not FileManager.checkFile(file_name, ConfigParser.getFileType):
+                print(f"Error:{file_name} does not exist or file type is not supported")
                 sys.exit(0)
-            secret, nonce = CredentialManager.verifySecret(file)
-            PcryptCLI.decryptFile(file, secret, nonce)
+            secret, nonce = CredentialManager.verifySecret(file_name)
+            PcryptCLI.decryptFile(file_name, secret, nonce)
             print(f"\n")
         
         elif args.encrypt_directory:
-            dir = args.encrypt_directory[0]
-            files=FileManager.getAllFiles(dir)
-            secret, nonce = CredentialManager.createSecret()
-            for file in files:
-                PcryptCLI.encryptFile(str(file), secret, nonce)
-                print(f"\n")
-            print(f"\n")
+            try:
+                dir = args.encrypt_directory[0]
+                files=FileManager.getAllUncryptedFiles(dir)
+                assert files, "Error: There is no applicable file in directory " + dir
+                secret, nonce = CredentialManager.createSecret()
+                for file in files:
+                    PcryptCLI.encryptFile(str(file), secret, nonce)
+                    print(f"\n")
+            except AssertionError as e:
+                print(e)
+
 
         elif args.decrypt_directory:
-            dir = args.decrypt_directory[0]
-            files=FileManager.getAllFiles(dir)
-            secret, nonce = CredentialManager.createSecret()
-            for file in files:
-                PcryptCLI.decryptFile(str(file), secret, nonce)
-                print(f"\n")
-            print(f"\n")
+            try:
+                dir = args.decrypt_directory[0]
+                files = FileManager.getAllEncryptedFiles(dir)
+                assert files, "Error: There is no applicable file in directory " + dir
+                secret, nonce = CredentialManager.createSecret()
+                for file in files:
+                    PcryptCLI.decryptFile(str(file), secret, nonce)
+                    print(f"\n")
+            except AssertionError as e:
+                print(e)
+        
+        elif args.show_config:
+            ConfigParser.listConfig()
+            sys.exit(0)
+            
 
 if __name__ == "__main__":
     pcryptCLI = PcryptCLI()

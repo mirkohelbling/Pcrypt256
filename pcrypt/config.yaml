@@ -1,2 +1,20 @@
-fileType: ".secret.xml"
-algorithm: "AES-256-CTR"
+File_Ending: ".secret.xml"
+Encryption_Algorithm: "AES-256-CTR"
+Supported_Files:
+- .txt
+- .csv
+- .json
+- .xml
+- .pdf
+- .doc
+- .docx
+- .xls
+- .xlsx
+- .png
+- .jpg
+- .jpeg
+
+# Secondary Encryption: "TBD"
+# Key Generation: "SHA256"
+# File Integrity: "SHA512"
+# Key Length: "256"

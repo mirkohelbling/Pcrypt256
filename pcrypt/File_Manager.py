@@ -10,12 +10,21 @@ from Config_Parser import ConfigParser
 
 class FileManager:
 
+    
     @staticmethod
-    def checkFile(file)-> bool:
-        file_path = Path(file)
-        if not file_path.exists():
-            return False
+    def checkFile(file_name, expected_ending="*.*")-> bool:
+        file_path = Path(file_name)
+        try:
+                assert FileManager.checkFileType(file_path)
+                assert file_path.exists()       
+        except AssertionError as e:
+                return False
         return True
+    
+    @staticmethod
+    def checkFileType(file_path):
+        # Check if the file type (extension) is in the list of allowed extensions
+        return any(file_path.suffix.lower() == ext.lower() for ext in ConfigParser.getSupportedFiles())
     
     @staticmethod
     def getFileSize(file)->int:
@@ -40,7 +49,14 @@ class FileManager:
             sys.stdout.flush()
             time.sleep(0.1)
 
-    def getAllFiles(dir)->list:
-        dir = Path(dir)
-        files = [file for file in dir.rglob('*') if file.is_file()]
-        return files
+    @staticmethod
+    def getAllUncryptedFiles(dir) -> list:
+        dir_path = Path(dir)
+        uFiles = [file for file in dir_path.rglob('*') if file.is_file() and not file.name.endswith(ConfigParser.getFileType())]
+        return uFiles
+
+    @staticmethod
+    def getAllEncryptedFiles(dir) -> list:
+        files = Path(dir)
+        eFiles = [file for file in files.rglob('*'+ConfigParser.getFileType()) if file.is_file()]
+        return eFiles

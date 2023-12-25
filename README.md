@@ -11,7 +11,6 @@ PCrypt256 is a command-line tool for file encryption and decryption using AES-25
 - Implementing HSM as secret safe
 
 ## Features
-- 
 - Strong encryption using AES-256 in CTR mode
 - Command-line interface for easy integration into scripts or manual use
 - Encryption of individual files or entire directories (including subdirectories)
